@@ -1,0 +1,1698 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## mnist.yml"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:53:16.514823Z",
+     "start_time": "2017-03-07T14:53:16.507319+08:00"
+    },
+    "collapsed": false,
+    "run_control": {
+     "frozen": false,
+     "read_only": false
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Writing mnist_demo/mnist.yml\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%writefile  mnist_demo/mnist.yml \n",
+    "\n",
+    "---\n",
+    "\n",
+    "\n",
+    "model:\n",
+    "                                \n",
+    "  - input: images                # build input layer, with name: images, images also is input_x\n",
+    "\n",
+    "  - convolution:\n",
+    "      kernels: 64\n",
+    "      size: [2, 2]\n",
+    "  - activation: relu\n",
+    "\n",
+    "  - convolution:\n",
+    "      kernels: 96\n",
+    "      size: [2, 2]                # QUESTION: as long as padding=same, convol images won't shrink? \n",
+    "  - activation: relu\n",
+    "                                  # QUESTION: when pool shrink the image size, I don't need to track size here\n",
+    "  - pool: [3, 3]                  # add a pooling layer with shape 3x3\n",
+    "\n",
+    "  - convolution:\n",
+    "      kernels: 96\n",
+    "      size: [2, 2]\n",
+    "  - activation: relu\n",
+    "\n",
+    "  - flatten:\n",
+    "  - dense: [64, 10]\n",
+    "\n",
+    "  - activation: softmax            # apply softmax activation to output layer\n",
+    "    name: labels                   # Question and Answer: make this layer to be output layer, name it `labels`\n",
+    "                                   # `name: labels` can be replaced with `- output: labels` \n",
+    "\n",
+    "\n",
+    "include: mnist_defaults.yml  # to define default setting \n",
+    "..."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## mnist_defaults.yml"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 103,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:24:46.981984Z",
+     "start_time": "2017-03-07T17:24:46.967799+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Overwriting mnist_demo/mnist_defaults.yml\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%writefile mnist_demo/mnist_defaults.yml\n",
+    "\n",
+    "---\n",
+    "                         # Declare the loss function that is used during training/validation/testing.\n",
+    "loss:\n",
+    "                         # It is a list of loss functions, one for each model output.\n",
+    "                         # The MNIST example only has one output, named \"labels\".\n",
+    "  - target: labels\n",
+    "    name: categorical_crossentropy\n",
+    "\n",
+    "                         # The \"include\" section in \"mnist.yml\" is magical, and will merge this section\n",
+    "                         # into the section in \"mnist.yml\".\n",
+    "                         ######## merge: this entire mnist-default.yml, not a few lines here? ##############\n",
+    "                    \n",
+    "                    \n",
+    "                                # See what included in train section: http://kur.deepgram.com/specification.html#train\n",
+    "train:\n",
+    "    \n",
+    "  data:  \n",
+    "    - mnist:                    # mnist is data supplier, with 2 parameters: images, and labels\n",
+    "        images:                 # dataset under variable name images, will be downloaded inside ~/kur\n",
+    "          url: \"http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz\"\n",
+    "          checksum: 440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609\n",
+    "          path: \"~/kur/mnist\"  # QUESTION!: mnist dataset will be downloaded to `~/kur`, regardless where I set the path?\n",
+    "            \n",
+    "            \n",
+    "            \n",
+    "                                # QUESTION!: Is it possible to use mnist data supplier for other image datasets?\n",
+    "                                # for example, I have local files `images.gz` and `labels.gz` saved in ~/kur\n",
+    "                                # can I use mnist data supplier for my lcoal files? \n",
+    "                                # how should I create `label.gz`?\n",
+    "                            \n",
+    "                                # QUESTION: STANDARD PACKAGE (http://kur.deepgram.com/specification.html#standard-packaging)\n",
+    "                                # `url`, `checksum`, `path` are universal to other data suppliers, but it up to other data\n",
+    "                                # suppliers to decide to utilize them or not, right?\n",
+    "                                # data suppliers: mnist, cifar, pickle, numpy_dict, csv, speech_recognition, are all different\n",
+    "            \n",
+    "                                # QUESTION: be cautious on file name, key name, input_layer name, output_layer name\n",
+    "                                # read (https://hyp.is/P5qm7ALoEeecumOcfUu09g/kur.deepgram.com/specification.html)\n",
+    "            \n",
+    "            \n",
+    "            \n",
+    "        labels:                 # dataset under variable name labels, will be downloaded inside ~/kur\n",
+    "          url: \"http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz\"\n",
+    "          checksum: 3552534a0a558bbed6aed32b30c495cca23d567ec52cac8be1a0730e8010255c\n",
+    "          path: \"~/kur/mnist\"\n",
+    "\n",
+    "            \n",
+    "                                 # how to use see (http://kur.deepgram.com/specification.html#provider)\n",
+    "                                 # As we discuss in \"Examples\" in the documentation, we only train on the first\n",
+    "                                 # batches each epoch. This is just to make getting through the MNIST example\n",
+    "                                 # nice and quick on slow/CPU-only machines. If you have a GPU, feel free to\n",
+    "                                 # remove the \"provider:\" section entirely.\n",
+    "                                \n",
+    "  provider:                      \n",
+    "    name: batch_provider         # if missing, then default is `name: batch_provider`, \n",
+    "    batch_size: 10               # if missing, then `batch_size: 32` is default\n",
+    "    num_batches: 10              # if missing, use all batches, or set any number below max_num_batch\n",
+    "    randomize: true              # if missing, default is true, yes \n",
+    "        \n",
+    "                                 # more parameters of `provider`: sortagrad, sort_by, shuffle_after, forced_batch_size\n",
+    "                                 # QUESTION!: on the use of `sort_by`\n",
+    "                                 # `sort_by: X` X must be input name or a column name? \n",
+    "                                 # how and when do we need to use it other than speech example?\n",
+    "\n",
+    "\n",
+    "\n",
+    "  weights: \n",
+    "    initial: mnist_demo/best_w\n",
+    "    last: mnist_demo/last_w\n",
+    "        \n",
+    "        \n",
+    "  log:                           # QUESTION: see (http://kur.deepgram.com/specification.html#log)\n",
+    "    path: mnist_demo/mnist_log              \n",
+    "                                 # if missing or `log: ` or `log: null`, then nothing is created or saved\n",
+    "                                 # there is more advanced way of using it\n",
+    "        \n",
+    "        \n",
+    "        \n",
+    "                                 # QUESTION: see (http://kur.deepgram.com/specification.html#epochs)\n",
+    "  epochs:                        # if missing, or `epochs: ` or `epochs: null` or `epochs: infinite`, \n",
+    "                                 # then keep iterating until ctrl + c to stop\n",
+    "    number: 2                    # it can be empty, `null`, `infinite` or just a number\n",
+    "    mode: additional                  \n",
+    "                                 # 2 modes: default is `additional`, the other is `total` with log exist\n",
+    "                                 # mode: can not be empty, but can be missing\n",
+    "    \n",
+    "    \n",
+    "                                 # QUESTION: see (http://kur.deepgram.com/specification.html#optimizer)\n",
+    "                                 # we have options: adam, sgd, rsmprop, with clip \n",
+    "  optimizer: \n",
+    "    name: adam\n",
+    "    learning_rate: 0.001\n",
+    "    \n",
+    "    \n",
+    "                                # Attention: checkpoint (http://kur.deepgram.com/specification.html?highlight=sort_by#checkpoints)\n",
+    "                                # every 2 epochs, 5 batches 50 samples, or 30 minutes (`minutes: 30`), whichever is earlist, then\n",
+    "                                # it should pause training, save the weights (path: checkpoint.kur), \n",
+    "                                # and run a validation run on 100 batches (validation: 100). You can also use `validation: yes` to \n",
+    "                                # run validation on the entire validation set, \n",
+    "                                # or `validation: ` no to only save the weights and then resume training.\n",
+    "                            \n",
+    "                                # QUESTION!: given `validation: 100`, will the best weights wrt validation samples all the way up\n",
+    "                                # to the moment of checkpoint, be selected to save inside checkpoint.kur, instead of the latest \n",
+    "                                # weights up to checkpoint? will each checkpoint be stored so there are many models saved in the end?\n",
+    "                                # or only the latest model will be stored?\n",
+    "                                # log: save the loss for each epoch, record history; \n",
+    "                                # best_w update the best weights wrt validation samples, record no history;\n",
+    "                                # checkpoint: should record history, right? every model at every checkpoint, should be saved?\n",
+    "                                # However, in this example, checkpoint.kur only has just one model(all layers) weights and biases\n",
+    "  checkpoint:\n",
+    "    path: checkpoint.kur\n",
+    "    epochs: 2\n",
+    "    batches: 5\n",
+    "    samples: 50\n",
+    "    minutes: 30\n",
+    "    validation: 100                                \n",
+    "    \n",
+    "    \n",
+    "    \n",
+    "\n",
+    "                         # Here, we use the MNIST test set as a validation set (more generally, you'll\n",
+    "                         # want train, validation, and test sets; but we ignore this for the MNIST\n",
+    "                         # example). The funky \"&validation\" is just a YAML anchor, so we can reference\n",
+    "                         # this section later.\n",
+    "validate: &validate\n",
+    "  data:\n",
+    "    - mnist:\n",
+    "        images:          #QUESTION AND ANSWER\n",
+    "                         # the checksum is optional. If you need to generate the checksum (because, for example, \n",
+    "                         # you want to use a new/different dataset, same images and labels with different datasets for train/valid), \n",
+    "                         # then just run sha256sum FILE (on Linux) or shasum -a 256 FILE (on macOS).\n",
+    "          url: \"http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz\"\n",
+    "          checksum: 8d422c7b0a1c1c79245a5bcf07fe86e33eeafee792b84584aec276f5a2dbc4e6\n",
+    "          path: \"~/kur/mnist\"\n",
+    "        labels:\n",
+    "          url: \"http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz\"\n",
+    "          checksum: f7ae60f92e00ec6debd23a6088c31dbd2371eca3ffa0defaefb259924204aec6\n",
+    "          path: \"~/kur/mnist\"\n",
+    "\n",
+    "                         # Let's also use less data for validation, just to speed it along.\n",
+    "  provider:\n",
+    "    num_batches: 5\n",
+    "    batch_size: 8\n",
+    "    randomize: yes\n",
+    "\n",
+    "        \n",
+    "                         # ATTENTION: where to save best validation weights see (http://kur.deepgram.com/specification.html#id1)\n",
+    "                         # Don't save if missing, or `weights: ` or `weights: null`\n",
+    "                         # save, with short form: `weights: path`\n",
+    "  weights: \n",
+    "    best: mnist_demo/best_w\n",
+    "\n",
+    "\n",
+    "                           # QUESTION!: how to make output hook useful in validate section?\n",
+    "                           # \"If in validate section, the hooks are passed a single batch of model output after each validation run. \n",
+    "                           # This is useful for printing out some examples of your model’s progress.\"\n",
+    "                           # does it mean: each epoch, a batch of model output will be generated; and it will be very helpful\n",
+    "                           # at end of each epoch, instead of loading from pickle file, such output is automatically printed out \n",
+    "                           # in a nice readable format for users to see, right? Like we discussed previously about making \n",
+    "                           # hooks for plotting weights and activations \n",
+    "  hooks: \n",
+    "    - output: \n",
+    "        path: mnist_demo/valid_results.pkl\n",
+    "        format: pickle  # we can have one format for output right?\n",
+    "        \n",
+    "                        # QUESTION: Don't we need separate dataset from training set and validation set?\n",
+    "                        # can Kur perform data split into training, validation and test sets?\n",
+    "        \n",
+    "        \n",
+    "        \n",
+    "        \n",
+    "                         # Let's define the test set, used if you execute something like:\n",
+    "                         # `kur test mnist.yml`\n",
+    "                         # The funky \"*validation\" is just a YAML alias, so we basically are setting the\n",
+    "                         # \"test\" section\" to be the same as the \"validate\" section.\n",
+    "                         # this is why `validate: &validate` is very necessary and useful ##################\n",
+    "test: \n",
+    "  <<: *validate\n",
+    "\n",
+    "                         # This is the evaluation section, used during `kur evaluate mnist.yml`.\n",
+    "                         # The funky \"<<: *validate\" is just YAML, and basically means \"copy all of the\n",
+    "                         # keys from 'validate', and then add/replace the \n",
+    "                         # what does \"copy all the keys from 'validate' mean? and \"add/replace\" what? ######\n",
+    "                         # but how exactly *validate and <<: *validate differ? #############################\n",
+    "           \n",
+    "\n",
+    "\n",
+    "  weights:               # best weights must set for test too, otherwise, meaningless\n",
+    "    initial: mnist_demo/best_w\n",
+    "        \n",
+    "  provider: \n",
+    "    num_batches: 30\n",
+    "                        \n",
+    "                        \n",
+    "                         # Use the entire testing set for evaluation, or set any number you like   \n",
+    "evaluate:\n",
+    "  <<: *validate\n",
+    "  \n",
+    "\n",
+    "\n",
+    "  provider:\n",
+    "    num_batches: null\n",
+    "        \n",
+    "        \n",
+    "  weights:               \n",
+    "    initial: mnist_demo/best_w\n",
+    "\n",
+    "        \n",
+    "                         # QUESTION!: with destination, this is to save/update an ouput whenever we run `kur evaluate file`, right?   \n",
+    "                         # (http://kur.deepgram.com/specification.html?highlight=sort_by#destination)\n",
+    "                    \n",
+    "                         # In this example: \n",
+    "                         # entire test set is used to produce the output pickle file\n",
+    "                         # the pickle file contains 2 dicts, one for prediction labels, another for truth labels\n",
+    "  destination: mnist_demo/mnist.results.pkl\n",
+    "\n",
+    "                         # This is a list of post-processing hooks. Here, we want to produce the\n",
+    "                         # digit-by-digit accuracy table (just called \"mnist\").\n",
+    "                         # QUESTION!: What exactly is such \"digit-by-digit accuracy table\"? \n",
+    "                         # How to access this table? How to see it?\n",
+    "  hooks:\n",
+    "    - mnist\n",
+    "...\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": true,
+    "editable": true
+   },
+   "source": [
+    "## Create checksum for dataset\n",
+    "- same input or output name, but different sets of data\n",
+    "- use checksum to differentiate them"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T02:50:31.170891Z",
+     "start_time": "2017-03-07T10:50:30.683825+08:00"
+    },
+    "collapsed": false,
+    "deletable": true,
+    "editable": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609  /Users/Natsume/kur/train-images-idx3-ubyte.gz\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!shasum -a 256 /Users/Natsume/kur/train-images-idx3-ubyte.gz"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Make a third mnist.yml to include"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 104,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:24:49.123957Z",
+     "start_time": "2017-03-07T17:24:49.117131+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Overwriting mnist_demo/mnist_sim.yml\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%writefile mnist_demo/mnist_sim.yml\n",
+    "\n",
+    "---\n",
+    "train: \n",
+    "  epochs: 2\n",
+    "\n",
+    "    \n",
+    "    \n",
+    "include: mnist.yml\n",
+    "...\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 105,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:25:25.816523Z",
+     "start_time": "2017-03-07T17:24:50.323831+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;37m[INFO 2017-03-07 17:24:51,590 kur.kurfile:699]\u001b[0m Parsing source: mnist_demo/mnist_sim.yml, included by top-level.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:51,593 kur.kurfile:699]\u001b[0m Parsing source: mnist.yml, included by mnist_demo/mnist_sim.yml.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:51,599 kur.kurfile:699]\u001b[0m Parsing source: mnist_defaults.yml, included by mnist_demo/mnist.yml.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:51,627 kur.kurfile:82]\u001b[0m Parsing Kurfile...\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:51,654 kur.loggers.binary_logger:71]\u001b[0m Loading log data: mnist_demo/mnist_log\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:52,660 kur.backend.backend:80]\u001b[0m Creating backend: keras\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:52,660 kur.backend.backend:83]\u001b[0m Backend variants: none\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:52,660 kur.backend.keras_backend:122]\u001b[0m No particular backend for Keras has been requested.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:53,800 kur.backend.keras_backend:195]\u001b[0m Keras is loaded. The backend is: theano\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:53,800 kur.model.model:260]\u001b[0m Enumerating the model containers.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:53,800 kur.model.model:265]\u001b[0m Assembling the model dependency graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:53,800 kur.model.model:280]\u001b[0m Connecting the model graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:55,835 kur.model.model:284]\u001b[0m Model inputs:  images\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:55,835 kur.model.model:285]\u001b[0m Model outputs: labels\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:55,968 kur.model.executor:313]\u001b[0m Best historical training loss: 1.332\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:55,969 kur.model.executor:320]\u001b[0m Best historical validation loss: 1.133\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:55,969 kur.model.executor:331]\u001b[0m Restarting from epoch 4.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:24:59,928 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "\n",
+      "Epoch 4/5, loss=0.971:  40%|█████▌        | 40/100 [00:01<00:01, 30.73samples/s]\u001b[1;37m[INFO 2017-03-07 17:25:01,506 kur.model.executor:521]\u001b[0m Making checkpoint backup: checkpoint.kur\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:02,892 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "\n",
+      "Validating, loss=N/A:   0%|                         | 0/40 [00:00<?, ?samples/s]\u001b[A\n",
+      "Validating, loss=0.409:  20%|███            | 8/40 [00:00<00:00, 59.01samples/s]\u001b[A\n",
+      "Validating, loss=0.600:  60%|████████▍     | 24/40 [00:00<00:00, 70.22samples/s]\u001b[A\n",
+      "Validating, loss=0.652:  80%|███████████▏  | 32/40 [00:00<00:00, 65.43samples/s]\u001b[A\n",
+      "Validating, loss=0.757: 100%|██████████████| 40/40 [00:00<00:00, 67.19samples/s]\u001b[A\n",
+      "Validating, loss=0.723: 56samples [00:00, 79.59samples/s]                       \u001b[A\n",
+      "Validating, loss=0.667: 80samples [00:00, 93.05samples/s]\u001b[A\n",
+      "Validating, loss=0.663: 96samples [00:00, 100.24samples/s]\u001b[A\n",
+      "Validating, loss=0.686: 112samples [00:01, 108.49samples/s]\u001b[A\n",
+      "Validating, loss=0.686: 136samples [00:01, 122.54samples/s]\u001b[A\n",
+      "Validating, loss=0.682: 160samples [00:01, 134.33samples/s]\u001b[A\n",
+      "Validating, loss=0.682: 176samples [00:01, 122.77samples/s]\u001b[A\n",
+      "Validating, loss=0.655: 192samples [00:01, 126.35samples/s]\u001b[A\n",
+      "Validating, loss=0.635: 216samples [00:01, 136.63samples/s]\u001b[A\n",
+      "Validating, loss=0.654: 232samples [00:01, 129.86samples/s]\u001b[A\n",
+      "Validating, loss=0.654: 248samples [00:01, 130.91samples/s]\u001b[A\n",
+      "Validating, loss=0.633: 264samples [00:02, 136.11samples/s]\u001b[A\n",
+      "Validating, loss=0.649: 280samples [00:02, 140.78samples/s]\u001b[A\n",
+      "Validating, loss=0.665: 304samples [00:02, 151.65samples/s]\u001b[A\n",
+      "Validating, loss=0.656: 328samples [00:02, 156.51samples/s]\u001b[A\n",
+      "Validating, loss=0.662: 344samples [00:02, 152.44samples/s]\u001b[A\n",
+      "Validating, loss=0.661: 360samples [00:02, 153.11samples/s]\u001b[A\n",
+      "Validating, loss=0.685: 376samples [00:02, 153.98samples/s]\u001b[A\n",
+      "Validating, loss=0.680: 392samples [00:02, 152.43samples/s]\u001b[A\n",
+      "Validating, loss=0.672: 416samples [00:03, 160.09samples/s]\u001b[A\n",
+      "Validating, loss=0.686: 440samples [00:03, 162.02samples/s]\u001b[A\n",
+      "Validating, loss=0.687: 464samples [00:03, 157.03samples/s]\u001b[A\n",
+      "Validating, loss=0.676: 488samples [00:03, 162.21samples/s]\u001b[A\n",
+      "Validating, loss=0.666: 512samples [00:03, 149.40samples/s]\u001b[A\n",
+      "Validating, loss=0.666: 528samples [00:03, 150.90samples/s]\u001b[A\n",
+      "Validating, loss=0.669: 552samples [00:03, 155.58samples/s]\u001b[A\n",
+      "Validating, loss=0.684: 568samples [00:04, 104.58samples/s]\u001b[A\n",
+      "Validating, loss=0.672: 584samples [00:04, 112.35samples/s]\u001b[A\n",
+      "Validating, loss=0.680: 600samples [00:04, 114.78samples/s]\u001b[A\n",
+      "Validating, loss=0.680: 616samples [00:04, 115.94samples/s]\u001b[A\n",
+      "Validating, loss=0.676: 632samples [00:04, 122.92samples/s]\u001b[A\n",
+      "Validating, loss=0.668: 656samples [00:04, 138.51samples/s]\u001b[A\n",
+      "Validating, loss=0.662: 680samples [00:04, 155.18samples/s]\u001b[A\n",
+      "Validating, loss=0.667: 704samples [00:05, 162.31samples/s]\u001b[A\n",
+      "Validating, loss=0.660: 728samples [00:05, 175.82samples/s]\u001b[A\n",
+      "Validating, loss=0.655: 752samples [00:05, 176.40samples/s]\u001b[A\n",
+      "Validating, loss=0.644: 776samples [00:05, 165.66samples/s]\u001b[A\n",
+      "Validating, loss=0.645: 800samples [00:05, 173.66samples/s]\u001b[A\n",
+      "\u001b[A\u001b[1;37m[INFO 2017-03-07 17:25:08,534 kur.model.executor:197]\u001b[0m Validation loss: 0.645\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:08,535 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/valid_results.pkl\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:08,536 kur.model.executor:413]\u001b[0m Saving best historical validation weights: mnist_demo/best_w\u001b[0m\n",
+      "Epoch 4/5, loss=0.932:  90%|████████████▌ | 90/100 [00:09<00:00, 13.88samples/s]\u001b[1;37m[INFO 2017-03-07 17:25:09,564 kur.model.executor:521]\u001b[0m Making checkpoint backup: checkpoint.kur\u001b[0m\n",
+      "\n",
+      "Validating, loss=N/A:   0%|                         | 0/40 [00:00<?, ?samples/s]\u001b[A\n",
+      "Validating, loss=0.244:  20%|███            | 8/40 [00:00<00:00, 49.02samples/s]\u001b[A\n",
+      "Validating, loss=0.717:  80%|███████████▏  | 32/40 [00:00<00:00, 64.36samples/s]\u001b[A\n",
+      "Validating, loss=0.743: 64samples [00:00, 82.63samples/s]                       \u001b[A\n",
+      "Validating, loss=0.725: 88samples [00:00, 100.14samples/s]\u001b[A\n",
+      "Validating, loss=0.658: 112samples [00:00, 120.91samples/s]\u001b[A\n",
+      "Validating, loss=0.620: 136samples [00:00, 135.79samples/s]\u001b[A\n",
+      "Validating, loss=0.652: 160samples [00:00, 143.80samples/s]\u001b[A\n",
+      "Validating, loss=0.614: 184samples [00:01, 156.22samples/s]\u001b[A\n",
+      "Validating, loss=0.605: 208samples [00:01, 172.95samples/s]\u001b[A\n",
+      "Validating, loss=0.585: 232samples [00:01, 186.67samples/s]\u001b[A\n",
+      "Validating, loss=0.582: 256samples [00:01, 189.97samples/s]\u001b[A\n",
+      "Validating, loss=0.572: 280samples [00:01, 198.58samples/s]\u001b[A\n",
+      "Validating, loss=0.562: 312samples [00:01, 211.29samples/s]\u001b[A\n",
+      "Validating, loss=0.582: 336samples [00:01, 216.42samples/s]\u001b[A\n",
+      "Validating, loss=0.578: 360samples [00:01, 219.38samples/s]\u001b[A\n",
+      "Validating, loss=0.570: 384samples [00:01, 220.54samples/s]\u001b[A\n",
+      "Validating, loss=0.565: 408samples [00:02, 221.06samples/s]\u001b[A\n",
+      "Validating, loss=0.560: 440samples [00:02, 226.64samples/s]\u001b[A\n",
+      "Validating, loss=0.557: 464samples [00:02, 226.23samples/s]\u001b[A\n",
+      "Validating, loss=0.543: 488samples [00:02, 228.20samples/s]\u001b[A\n",
+      "Validating, loss=0.542: 512samples [00:02, 227.24samples/s]\u001b[A\n",
+      "Validating, loss=0.552: 536samples [00:02, 228.81samples/s]\u001b[A\n",
+      "Validating, loss=0.543: 560samples [00:02, 229.13samples/s]\u001b[A\n",
+      "Validating, loss=0.542: 592samples [00:02, 231.61samples/s]\u001b[A\n",
+      "Validating, loss=0.536: 616samples [00:02, 229.41samples/s]\u001b[A\n",
+      "Validating, loss=0.536: 640samples [00:03, 226.76samples/s]\u001b[A\n",
+      "Validating, loss=0.537: 664samples [00:03, 230.31samples/s]\u001b[A\n",
+      "Validating, loss=0.531: 688samples [00:03, 229.68samples/s]\u001b[A\n",
+      "Validating, loss=0.536: 712samples [00:03, 221.68samples/s]\u001b[A\n",
+      "Validating, loss=0.545: 736samples [00:03, 205.33samples/s]\u001b[A\n",
+      "Validating, loss=0.538: 760samples [00:03, 201.12samples/s]\u001b[A\n",
+      "Validating, loss=0.537: 784samples [00:03, 206.28samples/s]\u001b[A\n",
+      "Validating, loss=0.537: 800samples [00:03, 211.94samples/s]\u001b[A\u001b[1;37m[INFO 2017-03-07 17:25:13,400 kur.model.executor:197]\u001b[0m Validation loss: 0.537\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:13,401 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/valid_results.pkl\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:13,404 kur.model.executor:413]\u001b[0m Saving best historical validation weights: mnist_demo/best_w\u001b[0m\n",
+      "Epoch 4/5, loss=0.912: 100%|█████████████| 100/100 [00:13<00:00,  5.72samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:13,540 kur.model.executor:464]\u001b[0m Training loss: 0.912\u001b[0m\n",
+      "Validating, loss=0.454: 100%|█████████████| 40/40 [00:00<00:00, 200.42samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:13,745 kur.model.executor:197]\u001b[0m Validation loss: 0.454\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:13,745 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/valid_results.pkl\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:13,746 kur.model.executor:413]\u001b[0m Saving best historical validation weights: mnist_demo/best_w\u001b[0m\n",
+      "\n",
+      "Epoch 5/5, loss=0.629:  40%|█████▌        | 40/100 [00:01<00:02, 27.19samples/s]\u001b[1;37m[INFO 2017-03-07 17:25:15,194 kur.model.executor:521]\u001b[0m Making checkpoint backup: checkpoint.kur\u001b[0m\n",
+      "\n",
+      "Validating, loss=N/A:   0%|                         | 0/40 [00:00<?, ?samples/s]\u001b[A\n",
+      "Validating, loss=0.457:  40%|█████▏       | 16/40 [00:00<00:00, 150.83samples/s]\u001b[A\n",
+      "Validating, loss=0.463: 48samples [00:00, 173.21samples/s]                      \u001b[A\n",
+      "Validating, loss=0.417: 80samples [00:00, 195.55samples/s]\u001b[A\n",
+      "Validating, loss=0.425: 112samples [00:00, 214.33samples/s]\u001b[A\n",
+      "Validating, loss=0.440: 144samples [00:00, 229.19samples/s]\u001b[A\n",
+      "Validating, loss=0.423: 168samples [00:00, 193.70samples/s]\u001b[A\n",
+      "Validating, loss=0.442: 192samples [00:00, 186.86samples/s]\u001b[A\n",
+      "Validating, loss=0.423: 216samples [00:01, 184.68samples/s]\u001b[A\n",
+      "Validating, loss=0.441: 240samples [00:01, 180.54samples/s]\u001b[A\n",
+      "Validating, loss=0.451: 264samples [00:01, 172.40samples/s]\u001b[A\n",
+      "Validating, loss=0.444: 288samples [00:01, 185.53samples/s]\u001b[A\n",
+      "Validating, loss=0.444: 320samples [00:01, 199.30samples/s]\u001b[A\n",
+      "Validating, loss=0.456: 344samples [00:01, 206.44samples/s]\u001b[A\n",
+      "Validating, loss=0.470: 368samples [00:01, 200.79samples/s]\u001b[A\n",
+      "Validating, loss=0.467: 392samples [00:01, 188.05samples/s]\u001b[A\n",
+      "Validating, loss=0.475: 416samples [00:02, 135.39samples/s]\u001b[A\n",
+      "Validating, loss=0.481: 432samples [00:02, 98.34samples/s] \u001b[A\n",
+      "Validating, loss=0.480: 448samples [00:02, 101.46samples/s]\u001b[A\n",
+      "Validating, loss=0.481: 464samples [00:02, 97.76samples/s] \u001b[A\n",
+      "Validating, loss=0.474: 480samples [00:02, 106.32samples/s]\u001b[A\n",
+      "Validating, loss=0.474: 504samples [00:03, 119.01samples/s]\u001b[A\n",
+      "Validating, loss=0.468: 520samples [00:03, 120.94samples/s]\u001b[A\n",
+      "Validating, loss=0.471: 536samples [00:03, 117.29samples/s]\u001b[A\n",
+      "Validating, loss=0.469: 552samples [00:03, 127.39samples/s]\u001b[A\n",
+      "Validating, loss=0.479: 568samples [00:03, 135.47samples/s]\u001b[A\n",
+      "Validating, loss=0.485: 584samples [00:03, 136.19samples/s]\u001b[A\n",
+      "Validating, loss=0.485: 608samples [00:03, 155.06samples/s]\u001b[A\n",
+      "Validating, loss=0.492: 632samples [00:03, 166.25samples/s]\u001b[A\n",
+      "Validating, loss=0.492: 656samples [00:03, 180.50samples/s]\u001b[A\n",
+      "Validating, loss=0.493: 680samples [00:04, 189.50samples/s]\u001b[A\n",
+      "Validating, loss=0.481: 712samples [00:04, 206.35samples/s]\u001b[A\n",
+      "Validating, loss=0.473: 744samples [00:04, 219.54samples/s]\u001b[A\n",
+      "Validating, loss=0.462: 776samples [00:04, 222.25samples/s]\u001b[A\n",
+      "Validating, loss=0.464: 800samples [00:04, 192.48samples/s]\u001b[A\n",
+      "\u001b[A\u001b[1;37m[INFO 2017-03-07 17:25:19,909 kur.model.executor:197]\u001b[0m Validation loss: 0.464\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:19,910 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/valid_results.pkl\u001b[0m\n",
+      "Epoch 5/5, loss=0.500:  90%|████████████▌ | 90/100 [00:06<00:00, 18.29samples/s]\u001b[1;37m[INFO 2017-03-07 17:25:20,799 kur.model.executor:521]\u001b[0m Making checkpoint backup: checkpoint.kur\u001b[0m\n",
+      "\n",
+      "Validating, loss=N/A:   0%|                         | 0/40 [00:00<?, ?samples/s]\u001b[A\n",
+      "Validating, loss=0.838:  20%|███            | 8/40 [00:00<00:00, 63.95samples/s]\u001b[A\n",
+      "Validating, loss=0.495:  60%|████████▍     | 24/40 [00:00<00:00, 76.58samples/s]\u001b[A\n",
+      "Validating, loss=0.465: 48samples [00:00, 93.95samples/s]                       \u001b[A\n",
+      "Validating, loss=0.495: 72samples [00:00, 113.26samples/s]\u001b[A\n",
+      "Validating, loss=0.477: 96samples [00:00, 132.74samples/s]\u001b[A\n",
+      "Validating, loss=0.479: 120samples [00:00, 152.14samples/s]\u001b[A\n",
+      "Validating, loss=0.451: 144samples [00:00, 168.74samples/s]\u001b[A\n",
+      "Validating, loss=0.463: 168samples [00:00, 184.21samples/s]\u001b[A\n",
+      "Validating, loss=0.490: 192samples [00:00, 195.62samples/s]\u001b[A\n",
+      "Validating, loss=0.482: 216samples [00:01, 203.87samples/s]\u001b[A\n",
+      "Validating, loss=0.471: 240samples [00:01, 202.08samples/s]\u001b[A\n",
+      "Validating, loss=0.457: 272samples [00:01, 215.64samples/s]\u001b[A\n",
+      "Validating, loss=0.462: 296samples [00:01, 221.46samples/s]\u001b[A\n",
+      "Validating, loss=0.469: 328samples [00:01, 230.92samples/s]\u001b[A\n",
+      "Validating, loss=0.460: 352samples [00:01, 231.77samples/s]\u001b[A\n",
+      "Validating, loss=0.451: 376samples [00:01, 230.17samples/s]\u001b[A\n",
+      "Validating, loss=0.447: 400samples [00:01, 228.62samples/s]\u001b[A\n",
+      "Validating, loss=0.441: 432samples [00:02, 233.36samples/s]\u001b[A\n",
+      "Validating, loss=0.437: 456samples [00:02, 227.17samples/s]\u001b[A\n",
+      "Validating, loss=0.444: 480samples [00:02, 179.56samples/s]\u001b[A\n",
+      "Validating, loss=0.446: 504samples [00:02, 163.35samples/s]\u001b[A\n",
+      "Validating, loss=0.438: 528samples [00:02, 158.86samples/s]\u001b[A\n",
+      "Validating, loss=0.435: 552samples [00:02, 164.57samples/s]\u001b[A\n",
+      "Validating, loss=0.421: 584samples [00:02, 184.67samples/s]\u001b[A\n",
+      "Validating, loss=0.418: 608samples [00:03, 193.84samples/s]\u001b[A\n",
+      "Validating, loss=0.418: 632samples [00:03, 198.49samples/s]\u001b[A\n",
+      "Validating, loss=0.420: 656samples [00:03, 206.24samples/s]\u001b[A\n",
+      "Validating, loss=0.419: 680samples [00:03, 206.49samples/s]\u001b[A\n",
+      "Validating, loss=0.423: 704samples [00:03, 197.47samples/s]\u001b[A\n",
+      "Validating, loss=0.444: 728samples [00:03, 190.47samples/s]\u001b[A\n",
+      "Validating, loss=0.448: 752samples [00:03, 193.34samples/s]\u001b[A\n",
+      "Validating, loss=0.456: 784samples [00:03, 208.25samples/s]\u001b[A\n",
+      "Validating, loss=0.456: 800samples [00:03, 202.19samples/s]\u001b[A\u001b[1;37m[INFO 2017-03-07 17:25:24,860 kur.model.executor:197]\u001b[0m Validation loss: 0.456\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:24,860 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/valid_results.pkl\u001b[0m\n",
+      "Epoch 5/5, loss=0.462: 100%|█████████████| 100/100 [00:11<00:00,  6.04samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:24,867 kur.model.executor:464]\u001b[0m Training loss: 0.462\u001b[0m\n",
+      "Validating, loss=0.574: 100%|█████████████| 40/40 [00:00<00:00, 183.06samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:25,097 kur.model.executor:197]\u001b[0m Validation loss: 0.574\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:25,097 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/valid_results.pkl\u001b[0m\n",
+      "Completed 5 epochs.\n",
+      "\u001b[1;37m[INFO 2017-03-07 17:25:25,100 kur.model.executor:235]\u001b[0m Saving most recent weights: mnist_demo/last_w\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "!kur -v train mnist_demo/mnist_sim.yml"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Model builds or not"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T05:32:04.281732Z",
+     "start_time": "2017-03-07T13:31:50.157835+08:00"
+    },
+    "collapsed": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;37m[INFO 2017-03-07 13:31:51,421 kur.kurfile:699]\u001b[0m Parsing source: mnist_demo/mnist.yml, included by top-level.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:51,430 kur.kurfile:699]\u001b[0m Parsing source: mnist_defaults.yml, included by mnist_demo/mnist.yml.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:51,450 kur.kurfile:82]\u001b[0m Parsing Kurfile...\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,451 kur.kurfile:784]\u001b[0m Parsing Kurfile section: settings\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,451 kur.kurfile:784]\u001b[0m Parsing Kurfile section: train\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,455 kur.kurfile:784]\u001b[0m Parsing Kurfile section: validate\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,460 kur.kurfile:784]\u001b[0m Parsing Kurfile section: test\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,464 kur.kurfile:784]\u001b[0m Parsing Kurfile section: evaluate\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,470 kur.containers.layers.placeholder:63]\u001b[0m Using short-hand name for placeholder: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,471 kur.containers.layers.placeholder:97]\u001b[0m Placeholder \"images\" has a deferred shape.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,473 kur.kurfile:784]\u001b[0m Parsing Kurfile section: loss\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:51,475 kur.__main__:96]\u001b[0m Trying to build a \"train\" model.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:51,525 kur.utils.package:233]\u001b[0m File exists and passed checksum: /Users/Natsume/kur/mnist/train-images-idx3-ubyte.gz\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:52,724 kur.utils.package:233]\u001b[0m File exists and passed checksum: /Users/Natsume/kur/mnist/train-labels-idx1-ubyte.gz\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:52,767 kur.providers.batch_provider:57]\u001b[0m Batch size set to: 10\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:52,767 kur.providers.batch_provider:102]\u001b[0m Maximum number of batches set to: 10\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:52,768 kur.backend.backend:187]\u001b[0m Using backend: keras\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:52,769 kur.backend.backend:80]\u001b[0m Creating backend: keras\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:52,769 kur.backend.backend:83]\u001b[0m Backend variants: none\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:52,769 kur.backend.keras_backend:122]\u001b[0m No particular backend for Keras has been requested.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:52,772 kur.backend.keras_backend:124]\u001b[0m Using the system-default Keras backend.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:52,772 kur.backend.keras_backend:189]\u001b[0m Overriding environmental variables: {'TF_CPP_MIN_LOG_LEVEL': '1', 'KERAS_BACKEND': None, 'THEANO_FLAGS': None}\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:54,040 kur.backend.keras_backend:195]\u001b[0m Keras is loaded. The backend is: theano\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:54,041 kur.model.model:260]\u001b[0m Enumerating the model containers.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:54,041 kur.model.model:265]\u001b[0m Assembling the model dependency graph.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:272]\u001b[0m Assembled Node: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:274]\u001b[0m   Uses: \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:276]\u001b[0m   Used by: ..convolution.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:277]\u001b[0m   Aliases: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:272]\u001b[0m Assembled Node: ..convolution.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:274]\u001b[0m   Uses: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,041 kur.model.model:276]\u001b[0m   Used by: ..activation.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:277]\u001b[0m   Aliases: ..convolution.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:272]\u001b[0m Assembled Node: ..activation.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:274]\u001b[0m   Uses: ..convolution.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:276]\u001b[0m   Used by: ..convolution.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:277]\u001b[0m   Aliases: ..activation.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:272]\u001b[0m Assembled Node: ..convolution.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:274]\u001b[0m   Uses: ..activation.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:276]\u001b[0m   Used by: ..activation.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:277]\u001b[0m   Aliases: ..convolution.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:272]\u001b[0m Assembled Node: ..activation.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:274]\u001b[0m   Uses: ..convolution.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:276]\u001b[0m   Used by: ..pool.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:277]\u001b[0m   Aliases: ..activation.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:272]\u001b[0m Assembled Node: ..pool.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:274]\u001b[0m   Uses: ..activation.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:276]\u001b[0m   Used by: ..convolution.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:277]\u001b[0m   Aliases: ..pool.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:272]\u001b[0m Assembled Node: ..convolution.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:274]\u001b[0m   Uses: ..pool.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:276]\u001b[0m   Used by: ..activation.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,042 kur.model.model:277]\u001b[0m   Aliases: ..convolution.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:272]\u001b[0m Assembled Node: ..activation.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:274]\u001b[0m   Uses: ..convolution.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:276]\u001b[0m   Used by: ..flatten.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:277]\u001b[0m   Aliases: ..activation.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:272]\u001b[0m Assembled Node: ..flatten.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:274]\u001b[0m   Uses: ..activation.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:276]\u001b[0m   Used by: ..dense.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:277]\u001b[0m   Aliases: ..flatten.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:272]\u001b[0m Assembled Node: ..dense.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:274]\u001b[0m   Uses: ..flatten.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:276]\u001b[0m   Used by: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:277]\u001b[0m   Aliases: ..dense.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:272]\u001b[0m Assembled Node: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:274]\u001b[0m   Uses: ..dense.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:276]\u001b[0m   Used by: \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:277]\u001b[0m   Aliases: labels\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:54,043 kur.model.model:280]\u001b[0m Connecting the model graph.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:311]\u001b[0m Building node: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:312]\u001b[0m   Aliases: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,043 kur.containers.layers.placeholder:117]\u001b[0m Creating placeholder for \"images\" with data type \"float32\".\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,044 kur.model.model:125]\u001b[0m Trying to infer shape for input \"images\"\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,044 kur.model.model:143]\u001b[0m Inferred shape for input \"images\": (28, 28, 1)\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,044 kur.containers.layers.placeholder:127]\u001b[0m Inferred shape: (28, 28, 1)\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,049 kur.model.model:382]\u001b[0m   Value: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,049 kur.model.model:311]\u001b[0m Building node: ..convolution.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,049 kur.model.model:312]\u001b[0m   Aliases: ..convolution.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,049 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:54,049 kur.model.model:315]\u001b[0m   - images: images\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,207 kur.model.model:382]\u001b[0m   Value: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,207 kur.model.model:311]\u001b[0m Building node: ..activation.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,207 kur.model.model:312]\u001b[0m   Aliases: ..activation.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,207 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,207 kur.model.model:315]\u001b[0m   - ..convolution.0: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,212 kur.model.model:382]\u001b[0m   Value: Elemwise{mul,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,212 kur.model.model:311]\u001b[0m Building node: ..convolution.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,212 kur.model.model:312]\u001b[0m   Aliases: ..convolution.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,212 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,212 kur.model.model:315]\u001b[0m   - ..activation.0: Elemwise{mul,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,228 kur.model.model:382]\u001b[0m   Value: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,228 kur.model.model:311]\u001b[0m Building node: ..activation.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,228 kur.model.model:312]\u001b[0m   Aliases: ..activation.1\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,228 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,228 kur.model.model:315]\u001b[0m   - ..convolution.1: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,229 kur.model.model:382]\u001b[0m   Value: Elemwise{mul,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,229 kur.model.model:311]\u001b[0m Building node: ..pool.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,229 kur.model.model:312]\u001b[0m   Aliases: ..pool.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,229 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,229 kur.model.model:315]\u001b[0m   - ..activation.1: Elemwise{mul,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,232 kur.model.model:382]\u001b[0m   Value: DimShuffle{0,2,3,1}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,232 kur.model.model:311]\u001b[0m Building node: ..convolution.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,232 kur.model.model:312]\u001b[0m   Aliases: ..convolution.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,232 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,232 kur.model.model:315]\u001b[0m   - ..pool.0: DimShuffle{0,2,3,1}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,248 kur.model.model:382]\u001b[0m   Value: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,248 kur.model.model:311]\u001b[0m Building node: ..activation.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,249 kur.model.model:312]\u001b[0m   Aliases: ..activation.2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,249 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,249 kur.model.model:315]\u001b[0m   - ..convolution.2: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,250 kur.model.model:382]\u001b[0m   Value: Elemwise{mul,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,250 kur.model.model:311]\u001b[0m Building node: ..flatten.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,250 kur.model.model:312]\u001b[0m   Aliases: ..flatten.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,250 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,250 kur.model.model:315]\u001b[0m   - ..activation.2: Elemwise{mul,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,256 kur.model.model:382]\u001b[0m   Value: Reshape{2}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,257 kur.model.model:311]\u001b[0m Building node: ..dense.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,257 kur.model.model:312]\u001b[0m   Aliases: ..dense.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,257 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,257 kur.model.model:315]\u001b[0m   - ..flatten.0: Reshape{2}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,390 kur.model.model:382]\u001b[0m   Value: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,390 kur.model.model:311]\u001b[0m Building node: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,390 kur.model.model:312]\u001b[0m   Aliases: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,390 kur.model.model:313]\u001b[0m   Inputs:\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,391 kur.model.model:315]\u001b[0m   - ..dense.0: Elemwise{add,no_inplace}.0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,391 kur.model.model:382]\u001b[0m   Value: Softmax.0\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:56,392 kur.model.model:284]\u001b[0m Model inputs:  images\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:31:56,392 kur.model.model:285]\u001b[0m Model outputs: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,392 kur.model.executor:101]\u001b[0m Recompiling the model.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,392 kur.backend.keras_backend:527]\u001b[0m Instantiating a Keras model.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,860 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,861 kur.backend.keras_backend:538]\u001b[0m Layer (type)                     Output Shape          Param #     Connected to                     \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,861 kur.backend.keras_backend:538]\u001b[0m ====================================================================================================\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,861 kur.backend.keras_backend:538]\u001b[0m images (InputLayer)              (None, 28, 28, 1)     0                                            \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,861 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,861 kur.backend.keras_backend:538]\u001b[0m ..convolution.0 (Convolution2D)  (None, 28, 28, 64)    320         images[0][0]                     \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,861 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,862 kur.backend.keras_backend:538]\u001b[0m ..activation.0 (Activation)      (None, 28, 28, 64)    0           ..convolution.0[0][0]            \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,862 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ..convolution.1 (Convolution2D)  (None, 28, 28, 96)    24672       ..activation.0[0][0]             \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ..activation.1 (Activation)      (None, 28, 28, 96)    0           ..convolution.1[0][0]            \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ..pool.0 (MaxPooling2D)          (None, 26, 26, 96)    0           ..activation.1[0][0]             \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ..convolution.2 (Convolution2D)  (None, 26, 26, 96)    36960       ..pool.0[0][0]                   \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,863 kur.backend.keras_backend:538]\u001b[0m ..activation.2 (Activation)      (None, 26, 26, 96)    0           ..convolution.2[0][0]            \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,864 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,864 kur.backend.keras_backend:538]\u001b[0m ..flatten.0 (Flatten)            (None, 64896)         0           ..activation.2[0][0]             \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,864 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,864 kur.backend.keras_backend:538]\u001b[0m dense_1 (Dense)                  (None, 64)            4153408     ..flatten.0[0][0]                \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,864 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,865 kur.backend.keras_backend:538]\u001b[0m ..dense.0 (Dense)                (None, 10)            650         dense_1[0][0]                    \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,865 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,865 kur.backend.keras_backend:538]\u001b[0m labels (Activation)              (None, 10)            0           ..dense.0[0][0]                  \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,865 kur.backend.keras_backend:538]\u001b[0m ====================================================================================================\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,865 kur.backend.keras_backend:538]\u001b[0m Total params: 4,216,010\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,866 kur.backend.keras_backend:538]\u001b[0m Trainable params: 4,216,010\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,866 kur.backend.keras_backend:538]\u001b[0m Non-trainable params: 0\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,866 kur.backend.keras_backend:538]\u001b[0m ____________________________________________________________________________________________________\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,866 kur.backend.keras_backend:538]\u001b[0m \u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,866 kur.backend.keras_backend:576]\u001b[0m Assembling a training function from the model.\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:31:56,880 kur.backend.keras_backend:509]\u001b[0m Adding additional inputs: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,862 kur.backend.keras_backend:599]\u001b[0m Additional inputs for log functions: labels\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,863 kur.backend.keras_backend:616]\u001b[0m Expected input shapes: images=(None, 28, 28, 1), labels=(None, None)\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,863 kur.backend.keras_backend:634]\u001b[0m Compiled model: {'shapes': {'input': [(None, 28, 28, 1), (None, None)]}, 'names': {'input': ['images', 'labels'], 'output': ['labels', 'labels']}, 'func': <keras.backend.theano_backend.Function object at 0x1207f4400>}\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,863 kur.providers.batch_provider:57]\u001b[0m Batch size set to: 2\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,863 kur.providers.batch_provider:102]\u001b[0m Maximum number of batches set to: 1\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 13:32:02,969 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,969 kur.providers.batch_provider:139]\u001b[0m Preparing next batch of data...\u001b[0m\n",
+      "\u001b[1;34m[DEBUG 2017-03-07 13:32:02,970 kur.providers.batch_provider:204]\u001b[0m Next batch of data has been prepared.\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "!kur -vv build mnist_demo/mnist.yml"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Just train 2 epochs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:53:48.752165Z",
+     "start_time": "2017-03-07T14:53:30.299532+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;37m[INFO 2017-03-07 14:53:31,525 kur.kurfile:699]\u001b[0m Parsing source: mnist_demo/mnist.yml, included by top-level.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:31,537 kur.kurfile:699]\u001b[0m Parsing source: mnist_defaults.yml, included by mnist_demo/mnist.yml.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:31,574 kur.kurfile:82]\u001b[0m Parsing Kurfile...\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:31,613 kur.loggers.binary_logger:107]\u001b[0m Log does not exist. Creating path: mnist_demo/mnist_log\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:33,028 kur.backend.backend:80]\u001b[0m Creating backend: keras\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:33,028 kur.backend.backend:83]\u001b[0m Backend variants: none\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:33,028 kur.backend.keras_backend:122]\u001b[0m No particular backend for Keras has been requested.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:34,075 kur.backend.keras_backend:195]\u001b[0m Keras is loaded. The backend is: theano\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:34,075 kur.model.model:260]\u001b[0m Enumerating the model containers.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:34,075 kur.model.model:265]\u001b[0m Assembling the model dependency graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:34,075 kur.model.model:280]\u001b[0m Connecting the model graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:35,973 kur.model.model:284]\u001b[0m Model inputs:  images\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:35,973 kur.model.model:285]\u001b[0m Model outputs: labels\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:35,974 kur.kurfile:357]\u001b[0m Ignoring missing initial weights: mnist_demo/best_w. If this is undesireable, set \"must_exist\" to \"yes\" in the approriate \"weights\" section.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:35,974 kur.model.executor:315]\u001b[0m No historical training loss available from logs.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:35,974 kur.model.executor:323]\u001b[0m No historical validation loss available from logs.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:35,974 kur.model.executor:329]\u001b[0m No previous epochs.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:39,855 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "\n",
+      "Epoch 1/2, loss=2.418: 100%|█████████████| 100/100 [00:02<00:00, 48.54samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:42,522 kur.model.executor:464]\u001b[0m Training loss: 2.418\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:43,953 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "Validating, loss=1.999: 100%|██████████████| 40/40 [00:00<00:00, 82.25samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:44,396 kur.model.executor:197]\u001b[0m Validation loss: 1.999\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:44,396 kur.model.executor:413]\u001b[0m Saving best historical validation weights: mnist_demo/best_w\u001b[0m\n",
+      "\n",
+      "Epoch 2/2, loss=1.332: 100%|█████████████| 100/100 [00:03<00:00, 42.45samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:47,700 kur.model.executor:464]\u001b[0m Training loss: 1.332\u001b[0m\n",
+      "Validating, loss=1.292: 100%|█████████████| 40/40 [00:00<00:00, 142.08samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:47,987 kur.model.executor:197]\u001b[0m Validation loss: 1.292\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:47,987 kur.model.executor:413]\u001b[0m Saving best historical validation weights: mnist_demo/best_w\u001b[0m\n",
+      "Completed 2 epochs.\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:48,062 kur.model.executor:235]\u001b[0m Saving most recent weights: mnist_demo/last_w\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "!kur -v train mnist_demo/mnist.yml"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:54:39.897190Z",
+     "start_time": "2017-03-07T14:53:53.736389+08:00"
+    },
+    "collapsed": false,
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;37m[INFO 2017-03-07 14:53:54,808 kur.kurfile:699]\u001b[0m Parsing source: mnist_demo/mnist.yml, included by top-level.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:54,817 kur.kurfile:699]\u001b[0m Parsing source: mnist_defaults.yml, included by mnist_demo/mnist.yml.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:54,840 kur.kurfile:82]\u001b[0m Parsing Kurfile...\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:55,039 kur.backend.backend:80]\u001b[0m Creating backend: keras\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:55,039 kur.backend.backend:83]\u001b[0m Backend variants: none\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:55,039 kur.backend.keras_backend:122]\u001b[0m No particular backend for Keras has been requested.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:56,023 kur.backend.keras_backend:195]\u001b[0m Keras is loaded. The backend is: theano\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:56,024 kur.model.model:260]\u001b[0m Enumerating the model containers.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:56,024 kur.model.model:265]\u001b[0m Assembling the model dependency graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:56,024 kur.model.model:280]\u001b[0m Connecting the model graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:57,298 kur.model.model:284]\u001b[0m Model inputs:  images\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:57,298 kur.model.model:285]\u001b[0m Model outputs: labels\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:53:59,264 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "Evaluating: 100%|███████████████████| 10000/10000 [00:39<00:00, 251.76samples/s]\n",
+      "LABEL     CORRECT   TOTAL     ACCURACY  \n",
+      "0         921       980        94.0%\n",
+      "1         1089      1135       95.9%\n",
+      "2         18        1032        1.7%\n",
+      "3         602       1010       59.6%\n",
+      "4         745       982        75.9%\n",
+      "5         368       892        41.3%\n",
+      "6         815       958        85.1%\n",
+      "7         888       1028       86.4%\n",
+      "8         813       974        83.5%\n",
+      "9         343       1009       34.0%\n",
+      "ALL       6602      10000      66.0%\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:54:39,133 kur.model.hooks.output_hook:40]\u001b[0m Saving model output as pickle: mnist_demo/mnist.results.pkl\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "!kur -v evaluate mnist_demo/mnist.yml"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:59:47.481898Z",
+     "start_time": "2017-03-07T14:59:36.496723+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;37m[INFO 2017-03-07 14:59:37,665 kur.kurfile:699]\u001b[0m Parsing source: mnist_demo/mnist.yml, included by top-level.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:37,674 kur.kurfile:699]\u001b[0m Parsing source: mnist_defaults.yml, included by mnist_demo/mnist.yml.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:37,695 kur.kurfile:82]\u001b[0m Parsing Kurfile...\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:37,889 kur.backend.backend:80]\u001b[0m Creating backend: keras\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:37,892 kur.backend.backend:83]\u001b[0m Backend variants: none\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:37,892 kur.backend.keras_backend:122]\u001b[0m No particular backend for Keras has been requested.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:39,040 kur.backend.keras_backend:195]\u001b[0m Keras is loaded. The backend is: theano\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:39,040 kur.model.model:260]\u001b[0m Enumerating the model containers.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:39,040 kur.model.model:265]\u001b[0m Assembling the model dependency graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:39,040 kur.model.model:280]\u001b[0m Connecting the model graph.\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:40,941 kur.model.model:284]\u001b[0m Model inputs:  images\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:40,941 kur.model.model:285]\u001b[0m Model outputs: labels\u001b[0m\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:42,793 kur.backend.keras_backend:666]\u001b[0m Waiting for model to finish compiling...\u001b[0m\n",
+      "Testing, loss=1.250: 100%|██████████████| 960/960 [00:03<00:00, 263.68samples/s]\n",
+      "\u001b[1;37m[INFO 2017-03-07 14:59:46,854 kur.model.executor:197]\u001b[0m Test loss: 1.250\u001b[0m\n"
+     ]
+    }
+   ],
+   "source": [
+    "!kur -v test mnist_demo/mnist.yml"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Check loss over epochs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:21:36.286758Z",
+     "start_time": "2017-03-07T14:21:36.276023+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "from kur.loggers import BinaryLogger\n",
+    "data = BinaryLogger.load_column('mnist_demo/mnist_log/', 'training_loss_labels')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 60,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:21:36.667280Z",
+     "start_time": "2017-03-07T14:21:36.656987+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "numpy.ndarray"
+      ]
+     },
+     "execution_count": 60,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(data)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 61,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T06:21:46.067660Z",
+     "start_time": "2017-03-07T14:21:46.057260+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 2.35232759,  1.52068317], dtype=float32)"
+      ]
+     },
+     "execution_count": 61,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Check evaluate_result.pkl"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:06:27.455182Z",
+     "start_time": "2017-03-07T17:06:27.450529+08:00"
+    },
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import pickle"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:06:28.700046Z",
+     "start_time": "2017-03-07T17:06:28.689203+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "objects = []\n",
+    "with (open(\"mnist_demo/mnist.results.pkl\", \"rb\")) as openfile:\n",
+    "    while True:\n",
+    "        try:\n",
+    "            objects.append(pickle.load(openfile))\n",
+    "        except EOFError:\n",
+    "            break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 96,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:09:28.293639Z",
+     "start_time": "2017-03-07T17:09:28.284715+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'labels': array([[  6.34934171e-04,   1.61952619e-03,   4.64436976e-04, ...,\n",
+       "           9.67636704e-01,   6.90784678e-03,   9.98236984e-03],\n",
+       "        [  2.50942772e-03,   1.99295226e-02,   3.06665897e-02, ...,\n",
+       "           1.41713594e-04,   4.14029285e-02,   2.23570954e-04],\n",
+       "        [  5.93420700e-04,   9.16382194e-01,   5.09680249e-03, ...,\n",
+       "           9.34527908e-03,   2.21553724e-02,   2.46891868e-03],\n",
+       "        ..., \n",
+       "        [  3.83175304e-03,   1.99483801e-02,   9.33283358e-04, ...,\n",
+       "           1.60496131e-01,   2.52854586e-01,   1.92379564e-01],\n",
+       "        [  4.16923352e-02,   4.19610478e-02,   4.21239715e-03, ...,\n",
+       "           3.33479494e-02,   3.46194357e-01,   4.40075547e-02],\n",
+       "        [  1.28660694e-01,   1.02628364e-04,   3.26921465e-04, ...,\n",
+       "           3.14452591e-05,   9.28878610e-04,   5.14979765e-04]], dtype=float32)}"
+      ]
+     },
+     "execution_count": 96,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "objects[0]['result']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 98,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:09:59.560940Z",
+     "start_time": "2017-03-07T17:09:59.548638+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'labels': array([[ 0.,  0.,  0., ...,  1.,  0.,  0.],\n",
+       "        [ 0.,  0.,  1., ...,  0.,  0.,  0.],\n",
+       "        [ 0.,  1.,  0., ...,  0.,  0.,  0.],\n",
+       "        ..., \n",
+       "        [ 0.,  0.,  0., ...,  0.,  0.,  0.],\n",
+       "        [ 0.,  0.,  0., ...,  0.,  0.,  0.],\n",
+       "        [ 0.,  0.,  0., ...,  0.,  0.,  0.]])}"
+      ]
+     },
+     "execution_count": 98,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "objects[0]['truth']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:11:35.519116Z",
+     "start_time": "2017-03-07T17:11:35.512006+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "10000"
+      ]
+     },
+     "execution_count": 99,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(objects[0]['result']['labels'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Check validate_output.pkl"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mnist_demo/valid_results.pkl"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 106,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:41:37.837526Z",
+     "start_time": "2017-03-07T17:41:37.822644+08:00"
+    },
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "objects = []\n",
+    "with (open(\"mnist_demo/valid_results.pkl\", \"rb\")) as openfile:\n",
+    "    while True:\n",
+    "        try:\n",
+    "            objects.append(pickle.load(openfile))\n",
+    "        except EOFError:\n",
+    "            break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 107,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:41:45.269203Z",
+     "start_time": "2017-03-07T17:41:45.237077+08:00"
+    },
+    "collapsed": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[{'result': {'labels': array([[  8.91884192e-05,   9.22899187e-01,   1.07372273e-02,\n",
+       "             4.75795940e-03,   4.09801403e-04,   1.20847908e-04,\n",
+       "             4.51875059e-03,   1.23824514e-02,   4.35064435e-02,\n",
+       "             5.78166742e-04],\n",
+       "          [  2.28239316e-02,   4.44366684e-04,   1.05896099e-02,\n",
+       "             3.18597704e-02,   5.73459780e-04,   6.58386350e-01,\n",
+       "             1.11939088e-01,   4.87184967e-04,   1.58910364e-01,\n",
+       "             3.98587994e-03],\n",
+       "          [  5.57961240e-02,   7.60489493e-04,   2.80040074e-02,\n",
+       "             4.02259966e-03,   8.62911567e-02,   1.72598765e-03,\n",
+       "             6.85843751e-02,   1.08213490e-02,   5.65326273e-01,\n",
+       "             1.78667635e-01],\n",
+       "          [  4.09069180e-04,   6.24194920e-01,   1.45504475e-01,\n",
+       "             3.56709734e-02,   8.88562412e-04,   1.62830736e-04,\n",
+       "             1.81097556e-02,   4.33615036e-03,   1.70211062e-01,\n",
+       "             5.12199127e-04],\n",
+       "          [  4.35693510e-05,   2.00781171e-04,   1.79562555e-03,\n",
+       "             7.90851377e-03,   1.33767007e-05,   1.20815123e-03,\n",
+       "             5.68588694e-05,   5.83512956e-05,   9.88627017e-01,\n",
+       "             8.77716957e-05],\n",
+       "          [  1.45326799e-03,   6.61300553e-04,   1.16445741e-03,\n",
+       "             5.47500968e-04,   7.60688663e-01,   1.25867652e-03,\n",
+       "             8.47148651e-04,   5.44718355e-02,   6.99914768e-02,\n",
+       "             1.08915672e-01],\n",
+       "          [  1.09258760e-03,   4.08619549e-03,   2.57198364e-01,\n",
+       "             7.99440313e-03,   4.61813202e-03,   4.67321742e-03,\n",
+       "             5.24312258e-01,   7.62540672e-04,   1.94034636e-01,\n",
+       "             1.22764567e-03],\n",
+       "          [  7.22539006e-03,   1.13751739e-03,   4.31430340e-02,\n",
+       "             1.56563297e-02,   5.49193501e-01,   1.70270856e-02,\n",
+       "             3.12157092e-03,   1.47507386e-02,   1.03476904e-01,\n",
+       "             2.45267928e-01]], dtype=float32)},\n",
+       "  'truth': {'images': array([[[[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           ..., \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]]],\n",
+       "   \n",
+       "   \n",
+       "          [[[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           ..., \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]]],\n",
+       "   \n",
+       "   \n",
+       "          [[[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           ..., \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]]],\n",
+       "   \n",
+       "   \n",
+       "          ..., \n",
+       "          [[[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           ..., \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]]],\n",
+       "   \n",
+       "   \n",
+       "          [[[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           ..., \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]]],\n",
+       "   \n",
+       "   \n",
+       "          [[[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           ..., \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]],\n",
+       "   \n",
+       "           [[-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            ..., \n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467],\n",
+       "            [-0.13251467]]]], dtype=float32),\n",
+       "   'labels': array([[ 0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.],\n",
+       "          [ 0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.],\n",
+       "          [ 0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.],\n",
+       "          [ 0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.],\n",
+       "          [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.],\n",
+       "          [ 0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.],\n",
+       "          [ 0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.],\n",
+       "          [ 0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.]])}}]"
+      ]
+     },
+     "execution_count": 107,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "objects"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 109,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:44:26.389704Z",
+     "start_time": "2017-03-07T17:44:26.381177+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "8"
+      ]
+     },
+     "execution_count": 109,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(objects[0]['result']['labels'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 110,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2017-03-07T09:45:03.194734Z",
+     "start_time": "2017-03-07T17:45:03.185900+08:00"
+    },
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "8"
+      ]
+     },
+     "execution_count": 110,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(objects[0]['truth']['images'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.5.3"
+  },
+  "toc": {
+   "colors": {
+    "hover_highlight": "#DAA520",
+    "running_highlight": "#FF0000",
+    "selected_highlight": "#FFD700"
+   },
+   "moveMenuLeft": true,
+   "nav_menu": {
+    "height": "174px",
+    "width": "252px"
+   },
+   "navigate_menu": true,
+   "number_sections": true,
+   "sideBar": false,
+   "threshold": 4,
+   "toc_cell": false,
+   "toc_position": {
+    "height": "250px",
+    "left": "1017px",
+    "right": "20px",
+    "top": "-81px",
+    "width": "253px"
+   },
+   "toc_section_display": "block",
+   "toc_window_display": true
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
