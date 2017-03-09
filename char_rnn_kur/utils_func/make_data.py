@@ -19,10 +19,14 @@ from vocab import *
 import json
 import os
 
-
+                                                                    # create data/
 if not os.path.exists('./data/'):
     os.mkdir('./data/')
 
+    
+                                                                    # create one_hot function
+                                                                    # v: list of char index for a corpose
+                                                                    # ndim: n_vocab
 def one_hot(v, ndim):
     v_one_hot = np.zeros(
         (len(v), ndim,)
@@ -34,9 +38,11 @@ def one_hot(v, ndim):
 x = []
 y = []
 
+                                                                    # join 2 or more book txt files into a big list of 
+
 all_chars = []
 for book in [
-    'pride_and_prejudice.txt',                                       # add books
+    'pride_and_prejudice.txt',                                       
     'shakespeare.txt'
 ]:
     with open('books/%s' % book, 'r') as infile:
@@ -44,13 +50,16 @@ for book in [
             c for c in ' '.join(infile.read().lower().split())
             if c in set(vocab)
         ]
+                                                                    # make sure all chars are restricted to 30 unqiue chars
+        
         all_chars += [' ']
         all_chars += chars
 
 all_chars = list(' '.join(''.join(all_chars).split()))
 num_chars = len(all_chars)
 with open('cleaned.txt', 'w') as outfile:
-    outfile.write(''.join(all_chars))
+    outfile.write(''.join(all_chars))                 
+                                                                     # join all words into a long string
 
 
 x, y = [], []
@@ -70,11 +79,24 @@ if dev:
             data_portions[i][0],
             data_portions[i][1] * 0.1
         )
-
+        
+        
+                                                                        # max_i = sum(num_train_char, num_validate_char, ...)
+                                                                        #            - seq_len
 max_i = sum([
     int(round(len(all_chars) * fraction))
     for name, fraction in data_portions
 ]) - seq_len
+
+
+
+
+                                                                # take all_chars
+                                                                # use seq_len as a window, shift 1 char to right at a time
+                                                                # each window is a sample (1, 50)
+                                                                # one-hot transform to each sample 
+                                                                # now, each sample for x, dim (50, 30)
+                                                                # now, each sample for y, dim (1, 30) or (30, )
 
 for i in range(max_i):
 
@@ -85,13 +107,22 @@ for i in range(max_i):
     for j, c in enumerate(in_char_seq):
         sample_x[j][char_to_int[c]] = 1
     x.append(sample_x)
-
+                                                                # x is a list, append each sample_x into x, as an element
     sample_y = np.zeros(n_vocab)
     sample_y[char_to_int[all_chars[i + seq_len]]] = 1
     y.append(sample_y)
+                                                                # y is a list, append each sample_y into y, as an element
 
+    
+                                                                # transform x, y from list to np.array
 x, y = np.array(x).astype('int32'), np.array(y).astype('int32')
 
+
+                                                                # each sample (50, 30)
+                                                                # len(x) is num of samples in x
+                                                                # split x by proportion for train, validate, evalute, test parts
+                                                                # split y by proportion for train, validate, evalute, test parts
+                                                                # save them into jsonl
 start_i = 0
 for name, fraction in data_portions:
     end_i = start_i + int(round(len(x) * fraction))

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
                                                                 # set length of the context sequence: 30 or any number
-seq_len = 30             
+seq_len = 50   #30          
 
 lowercase_letters = [
     chr(97 + i) for i in range(26)
